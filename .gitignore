@@ -103,6 +103,7 @@ celerybeat.pid
 
 # Environments
 .venv
+.ai4eo_superresolution_env
 env/
 venv/
 ENV/
@@ -152,3 +153,6 @@ wandb/
 
 #mlflow output
 mlruns
+
+# other
+scripts/jobs

@@ -14,35 +14,45 @@
 # Description
 This project is working on superresolution for Earth observation data using the permanently open AI4EO challenge for Enhanced Sentinel 2 Agriculture in Slovenia.
 
-# Quickstart
 
-## Create the pipeline environment and install the ai4eo_slovenia package
+# Install on HAICORE
 Before using the template, one needs to install the project as a package.
-* First, create a virtual environment.
-> You can either do it with conda (preferred) or venv.
+* First activate the necessary modules:
+    ```
+    source modules.sh
+    ```
+* Then create a virtual environment:
+    ```
+    python3 -m venv --system-site-packages .ai4eo_superresolution_env
+    ```
 * Then, activate the environment
-* Finally, install the project as a package. Run:
+    ```
+    source .ai4eo_superresolution_env/bin/activate
+    ```
+* Finally, install the necessary packages and then the project as a package. Run:
+    ```
+    pip install --upgrade pip
+    pip install --upgrade setuptools
+    pip install -e .
+    ```
+  
+
+## Run training
+To run the training (resp. testing) pipeline, simply run (from within the project directory):
 ```
-pip install -e .
-```
-## Run the MNIST example
-This pipeline comes with a toy example (MNIST dataset with a simple feedforward neural network). To run the training (resp. testing) pipeline, simply run:
-```
+source modules.sh
+source .ai4eo_superresolution_env/bin/activate
 python scripts/train.py
 # or python scripts/test.py
 ```
 Or, if you want to submit the training job to a submit (resp. interactive) cluster node via slurm, run:
 ```
 sbatch job_submission.sbatch
-# or sbatch job_submission_interactive.sbatch
+
 ```
 > * The experiments, evaluations, etc., are stored under the `logs` directory.
-> * The default experiments tracking system is mlflow. The `mlruns` directory is contained in `logs`. To view a user friendly view of the experiments, run:
-> ```
-> # make sure you are inside logs (where mlruns is located)
-> mlflow ui --host 0000
-> ```
 > * When evaluating (running `test.py`), make sure you give the correct checkpoint path in `configs/test.yaml`
+
 
 
 # Project Organization
