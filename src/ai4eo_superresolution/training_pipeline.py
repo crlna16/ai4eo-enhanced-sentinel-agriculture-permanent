@@ -11,7 +11,7 @@ from pytorch_lightning import (
     seed_everything,
 )
 from pytorch_lightning.loggers import LightningLoggerBase
-from ai4eo_slovenia import utils
+from ai4eo_superresolution import utils
 
 log = utils.get_logger(__name__)
 

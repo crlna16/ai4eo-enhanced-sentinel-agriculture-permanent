@@ -12,8 +12,8 @@ def main(config: DictConfig):
 
     # Imports can be nested inside @hydra.main to optimize tab completion
     # https://github.com/facebookresearch/hydra/issues/934
-    from ai4eo_slovenia import utils
-    from ai4eo_slovenia.training_pipeline import train
+    from ai4eo_superresolution import utils
+    from ai4eo_superresolution.training_pipeline import train
 
     # Applies optional utilities
     utils.extras(config)

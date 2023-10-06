@@ -1,0 +1,18 @@
+_target_: ai4eo_slovenia.datamodules.eopatches_datamodule.EODataModule
+
+data_dir: ${data_dir} # data_dir is specified in config.yaml
+batch_size: 64
+train_val_test_split: [55_000, 5_000, 10_000]
+num_workers: 0
+pin_memory: False
+
+dataset:
+    flag: # from above
+    seed: # from above
+    n_validation_patches: 10 
+    cropped_length: 32
+    cropped_patch_number: 10
+    cropped_is_random: True
+    n_time_frames: 1
+    bands: ['B01','B02','B03','B04','B05','B06','B07','B08','B8A','B09','B11','B12']
+    indices: ['NDVI']
