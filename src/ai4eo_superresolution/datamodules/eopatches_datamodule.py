@@ -20,9 +20,9 @@ from sklearn.metrics import matthews_corrcoef
 
 from eolearn.core import LoadTask
 
-import eotasks
+from ai4eo_superresolution.utils import eotasks, get_logger
 
-log = utils.get_logger(__name__)
+log = get_logger(__name__)
 
 # Data set
 class EODataset(Dataset):
@@ -123,6 +123,63 @@ class EODataset(Dataset):
             #log.info(f"time indices: {len(patch.data['BANDS'])}")
             x = []
             for ix in tidx: # outer most group: time index
+                for band in args.bands:
+                    band_ix = band_names.index(band)
+                    if len(patch.data['BANDS']) > ix:
+                        xx = patch.data['BANDS'][ix][:, :, band_ix]
+                    else:
+                        xx = patch.data['BANDS'][0][:, :, band_ix]
+                    x.append(xx.astype(np.float32))
+                for index in args.indices:
+                    if len(patch.data['BANDS']) > ix:
+                        xx = patch.data[index][ix]
+                    else:
+                        xx = patch.data[index][0]
+                    x.append(xx.astype(np.float32).squeeze())
+
+            y = patch.mask_timeless['CULTIVATED']
+            ytf = np.sum(y) / len(y.flatten())
+            #log.info(f'Target fraction: {100*ytf:.1f} %')
+            if ytf < args.min_true_fraction:
+                continue
+
+            w = patch.data_timeless['WEIGHTS']
+
+            # add rotated images
+            for k in range(4):
+                x_work = x.copy()
+                if k>=1:
+                    x = [np.rot90(x_work[i], k=k) for i in range(len(x))]
+                    x = np.stack(x)
+                lowres.append(np.array(x))
+                if k>=1:
+                    y = y.swapaxes(1,2)
+                    y = y.swapaxes(0,2)
+                    y = np.rot90(y, k=k)
+                y = y.swapaxes(0,2)
+                y = y.swapaxes(1,2)
+                target.append(y.astype(np.float32))
+                if k>=1:
+                    w = w.swapaxes(1,2)
+                    w = w.swapaxes(0,2)
+                    w = np.rot90(w, k=k)
+                w = w.swapaxes(0,2)
+                w = w.swapaxes(1,2)
+                weight.append(w.astype(np.float32))
+
+
+        # BANDS: time_idx * S * S * band_idx
+
+        self.lowres = np.stack(lowres) # all input features
+        self.target = np.concatenate(target) # all input features
+        self.weight = np.concatenate(weight) # all input features
+        log.info(f'{flag} dataset shapes: lowres = {self.lowres.shape}, target = {self.target.shape}')
+
+    def __len__(self):
+        return self.lowres.shape[0]
+
+    def __getitem__(self, idx):
+        return self.lowres[idx], self.target[idx], self.weight[idx]
 
 class EODataModule(LightningDataModule):
     """
@@ -159,8 +216,6 @@ class EODataModule(LightningDataModule):
         self.data_val: Optional[Dataset] = None
         self.data_test: Optional[Dataset] = None
 
-        get_variable_options(self.hparams.dataset)
-
     def prepare_data(self):
         """
         Adapt if necessary
@@ -178,17 +233,10 @@ class EODataModule(LightningDataModule):
         This method is called by lightning twice for `trainer.fit()` and `trainer.test()`, so be careful if you do a random split!
         The `stage` can be used to differentiate whether it's called before trainer.fit()` or `trainer.test()`."""
 
-        # load datasets only if they're not loaded already
-        if not self.data_train and not self.data_val and not self.data_test:
-            # load the EODataset for train and test
-            # Split the train set in train and validation
-            # assign the variables data_train etc
-            pass
-
-        if stage in (None, 'fit'):
+        if stage in (None, 'fit') and not self.data_train and not self.data_val:
             self.data_train = EODataset(options=self.hparams.dataset)
             self.data_val   = EODataset(options=self.hparams.dataset)
-        if stage in (None, 'test'):
+        if stage in (None, 'test') and not self.data_test:
             self.data_test  = EODataset(options=self.hparams.dataset)
 
     def train_dataloader(self):
